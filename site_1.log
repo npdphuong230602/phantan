@@ -1,0 +1,7 @@
+INFO:__main__:Site 1: Initialized with Timestamp Ordering
+INFO:__main__:Starting Site 1 on port 5001 with protocol TO
+ * Serving Flask app 'site_server'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+INFO:werkzeug:[33mPress CTRL+C to quit[0m

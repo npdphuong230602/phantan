@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concurrency Control Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="glass-header">
+            <div class="header-content">
+                <div>
+                    <h1>Concurrency Control Simulation</h1>
+                    <p>Distributed Benchmark - 2-Phase Locking vs Timestamp Ordering</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- LEFT PANEL -->
+            <div class="panel controls-panel">
+
+                <!-- MODE 1: Benchmark -->
+                <section class="glass-card card-benchmark">
+                    <div class="card-badge badge-benchmark">BENCHMARK</div>
+                    <h2>Thực nghiệm So sánh</h2>
+                    <p class="card-desc">Chạy thực nghiệm trên 5 mức xung đột, xuất biểu đồ phân tích.</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-threads">Threads</label>
+                            <input type="number" id="input-threads" value="30" min="1" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="input-runs">Runs</label>
+                            <input type="number" id="input-runs" value="3" min="1" max="100">
+                        </div>
+                    </div>
+                    <button id="btn-start" class="btn-primary">START BENCHMARK</button>
+                </section>
+
+                <!-- MODE 2: Live Demo -->
+                <section class="glass-card card-demo">
+                    <div class="card-badge badge-demo">LIVE DEMO</div>
+                    <h2>Fault Tolerance Demo</h2>
+                    <p class="card-desc">Chạy giao dịch liên tục. Nhấn Kill/Revive để mô phỏng lỗi node.</p>
+                    <div class="demo-buttons">
+                        <button id="btn-demo-start" class="btn-demo-start" onclick="startFaultDemo()">BẮT ĐẦU</button>
+                        <button id="btn-demo-stop" class="btn-demo-stop" onclick="stopFaultDemo()" disabled>DỪNG</button>
+                    </div>
+                </section>
+
+                <!-- Site Control Panel -->
+                <section class="glass-card card-sites">
+                    <h2>Điều khiển Node</h2>
+                    <div class="site-controls">
+                        <div class="site-row" id="site-row-1">
+                            <div class="site-info">
+                                <span class="status-dot alive" id="indicator-1"></span>
+                                <span class="site-label">Site 1 <span class="site-port">:5001</span></span>
+                            </div>
+                            <div class="site-actions">
+                                <button class="btn-kill" onclick="killSite(1)">Kill</button>
+                                <button class="btn-revive" onclick="reviveSite(1)">Revive</button>
+                            </div>
+                        </div>
+                        <div class="site-row" id="site-row-2">
+                            <div class="site-info">
+                                <span class="status-dot alive" id="indicator-2"></span>
+                                <span class="site-label">Site 2 <span class="site-port">:5002</span></span>
+                            </div>
+                            <div class="site-actions">
+                                <button class="btn-kill" onclick="killSite(2)">Kill</button>
+                                <button class="btn-revive" onclick="reviveSite(2)">Revive</button>
+                            </div>
+                        </div>
+                        <div class="site-row" id="site-row-3">
+                            <div class="site-info">
+                                <span class="status-dot alive" id="indicator-3"></span>
+                                <span class="site-label">Site 3 <span class="site-port">:5003</span></span>
+                            </div>
+                            <div class="site-actions">
+                                <button class="btn-kill" onclick="killSite(3)">Kill</button>
+                                <button class="btn-revive" onclick="reviveSite(3)">Revive</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- RIGHT PANEL -->
+            <div class="panel monitor-panel">
+
+                <!-- Terminal -->
+                <section class="glass-card terminal-card">
+                    <div class="card-header">
+                        <div class="header-left">
+                            <h2>Terminal</h2>
+                            <span id="run-status" class="status-badge">READY</span>
+                        </div>
+                        <div class="header-right">
+                            <button id="btn-copy" class="btn-icon" onclick="copyTerminal()" title="Sao chép nội dung">
+                                <span id="copy-label">Copy</span>
+                            </button>
+                            <button class="btn-icon" onclick="clearTerminal()" title="Xóa màn hình">
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="terminal-output" class="terminal-box">
+                        <div class="terminal-line info">System ready. Chọn chế độ để bắt đầu.</div>
+                    </div>
+                </section>
+
+                <!-- BENCHMARK CHARTS -->
+                <section class="glass-card" id="section-benchmark-charts">
+                    <div class="card-header">
+                        <h2>Benchmark Charts</h2>
+                        <button class="btn-icon" onclick="refreshCharts()">
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                    <div class="charts-container">
+                        <img id="chart-abort" src="/results/abort_rate_comparison.png" alt="Abort Rate" onerror="this.style.display='none'">
+                        <img id="chart-throughput" src="/results/throughput_comparison.png" alt="Throughput" onerror="this.style.display='none'">
+                        <img id="chart-latency" src="/results/latency_heatmap.png" alt="Latency" onerror="this.style.display='none'">
+                    </div>
+                </section>
+
+                <!-- LIVE DEMO CHART -->
+                <section class="glass-card" id="section-demo-chart" style="display:none;">
+                    <div class="card-header">
+                        <h2>Live Demo - Tỷ lệ thành công</h2>
+                    </div>
+                    <div class="live-chart-wrapper">
+                        <canvas id="live-chart"></canvas>
+                    </div>
+                    <div class="live-stats-bar">
+                        <div class="stat-item">
+                            <span class="stat-label">TỔNG GD</span>
+                            <span class="stat-value" id="stat-total">0</span>
+                        </div>
+                        <div class="stat-item stat-success">
+                            <span class="stat-label">THÀNH CÔNG</span>
+                            <span class="stat-value" id="stat-success">0</span>
+                        </div>
+                        <div class="stat-item stat-fail">
+                            <span class="stat-label">THẤT BẠI</span>
+                            <span class="stat-value" id="stat-fail">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">TỶ LỆ</span>
+                            <span class="stat-value" id="stat-rate">—</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            Concurrency Control - Locking vs. Timestamps - HCMUS
+        </footer>
+    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
